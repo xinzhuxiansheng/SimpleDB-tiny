@@ -45,7 +45,7 @@ public class BufferPool {
      */
     public BufferPool(int numPages) {
         // some code goes here
-        this.numPages = numPages;
+        this.numPages = numPages;  // buffer pool 存放 page 最大的个数
         buffer = new HashMap<>();
     }
     
