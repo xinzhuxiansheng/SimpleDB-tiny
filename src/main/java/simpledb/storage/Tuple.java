@@ -81,9 +81,13 @@ public class Tuple implements Serializable {
      * <p>
      * where \t is any whitespace (except a newline)
      */
+    @Override
     public String toString() {
-        // some code goes here
-        throw new UnsupportedOperationException("Implement this");
+        return "Tuple{" +
+                "tupleDesc=" + tupleDesc +
+                ", recordId=" + recordId +
+                ", fields=" + Arrays.toString(fields) +
+                '}';
     }
 
     /**

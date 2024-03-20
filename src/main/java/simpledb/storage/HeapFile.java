@@ -143,32 +143,24 @@ public class HeapFile implements DbFile {
     private class HeapFileIterator implements DbFileIterator {
         private final TransactionId tid;
         private Iterator<Tuple> tupsIterator;
-        private final int tableId;
-        private final int numPages;
         private int pageNo;
 
 
         public HeapFileIterator(TransactionId transactionId) {
             this.tid = transactionId;
-            tableId = getId();
-            numPages = numPages();
         }
 
 
         @Override
         public void open() throws DbException, TransactionAbortedException {
             pageNo = 0;
-            tupsIterator = getTuplesIterator(pageNo);
+            HeapPageId pid = new HeapPageId(getId(), pageNo);
+            tupsIterator = getTuplesIterator(pid);
         }
 
-        private Iterator<Tuple> getTuplesIterator(int pageNumber) throws DbException, TransactionAbortedException {
-            if (pageNumber >= 0 && pageNumber < numPages) {
-                HeapPageId heapPageId = new HeapPageId(tableId, pageNumber);
-                HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(tid, heapPageId, Permissions.READ_ONLY);
-                return heapPage.iterator();
-            } else {
-                throw new DbException(String.format("heapfile %d does not contain page %d!", tableId, pageNumber));
-            }
+        private Iterator<Tuple> getTuplesIterator(PageId pid) throws DbException, TransactionAbortedException {
+            HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(tid, pid, Permissions.READ_ONLY);
+            return heapPage.iterator();
         }
 
         @Override
@@ -176,16 +168,16 @@ public class HeapFile implements DbFile {
             if (tupsIterator == null) {
                 return false;
             }
-            if (!tupsIterator.hasNext()) {
-                if (pageNo < (numPages - 1)) {
-                    pageNo++;
-                    tupsIterator = getTuplesIterator(pageNo);
-                    return tupsIterator.hasNext();
-                } else {
-                    return false;
-                }
-            } else {
+            if (tupsIterator.hasNext()) {
                 return true;
+            }
+            if (pageNo < (numPages() - 1)) {
+                pageNo++;
+                HeapPageId pid = new HeapPageId(getId(), pageNo);
+                tupsIterator = getTuplesIterator(pid);
+                return tupsIterator.hasNext();
+            } else {
+                return false;
             }
         }
 
@@ -205,6 +197,7 @@ public class HeapFile implements DbFile {
 
         @Override
         public void close() {
+            pageNo = 0;
             tupsIterator = null;
         }
     }
